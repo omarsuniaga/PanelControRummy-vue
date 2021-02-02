@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Practica</title>
+  </head>
+
+  <body>
+    <div>
+      <form id="form">
+        <input class="nombre" type="text" placeholder="Nombre" />
+        <input class="puntos" type="number" placeholder="Puntos" autofocus />
+        <button id="add" type="submit">Add</button>
+      </form>
+    </div>
+
+    <script>
+      const sumatoria = [];
+      const add = document.getElementById("add");
+      add.addEventListener("click", (e) => {
+        e.preventDefault();
+        $nombre = document.querySelector(".nombre").value;
+        $puntos = document.querySelector(".puntos").value;
+        agregar($nombre, $puntos);
+      });
+      const agregar = (nombre, puntos) => {
+        sumatoria.push(parseInt(puntos));
+        let puntuacion = sumatoria.reduce((a, b) => a + b, 0);
+        console.log(nombre, "Total: ", puntuacion, sumatoria);
+        $puntos = "";
+      };
+    </script>
+  </body>
+</html>
