@@ -1,58 +1,66 @@
-var partida=[
-    {
-        hora:"",       
-        marcador:"",       
-        fecha:"",       //fecha inicio partida
-        jugador:[],
-        numPartidas:0,       //fecha inicio partida
-        duracion:0,            //Duracion de la partida
-        ganador:'',             //ganador de la Partida
-        turnos:{               
-            numTurnos:0
-        },
-        rondas:{
-            numRondas:0,      //cantidad de vueltas
-        },
-    }
-];  
-var ronda=""
 var vm = new Vue({
   el: "#app",
   vuetify: new Vuetify(),
   data:{
-      id: "",
-      quien:'',
-      estado: false,
-      editar: true,
-      contadorPartida:0,        //contador de partidas
-      time: "",                 //duracion de la partida
-      indice : 0,               //indice de cada jugador
-      rj: 30,                   //tiempo del cronometro
-      h: 0,                     //hora global
-      m: 0,                     //minuto global
-      s: 0,  
-      jugadores : [],  
-      winner:'',
-      partida  
-  },
+    inicio:'',
+    id: "",
+    quien:'',
+    estado: false,
+    editar: true,
+    numRonda:0,        //contador de partidas
+    numPartida:0,       //fecha inicio partida
+    time: "",                 //duracion de la partida
+    indice : 0,               //indice de cada jugador
+    rj: 30,                   //tiempo del cronometro
+    h: 0,                     //hora global
+    m: 0,                     //minuto global
+    s: 0,  
+    partida:[],
+    jugadores:[],
+    global:[],
+    marcador:[],
+    ronda:[
+        {
+            hora:"",       
+            fecha:"",       //fecha inicio partida
+            marcador:"",       
+            jugador:[],
+            duracion:0,            //Duracion de la partida
+            numTurnos:0,
+            ganador:'',             //ganador de la Partida
+        }
+    ],
+},
   mounted: function () {
-
-      //iniciamos el localstorage para obtener los jugadores guardados
       if(localStorage.getItem('jugadores')){
           this.jugadores=JSON.parse(localStorage.getItem('jugadores'))
-      }else{this.jugadores=[]}
+          this.partida=(JSON.parse(localStorage.getItem('partida')))
+          this.record();
+        //   console.log(this.global)
+        //   console.log(this.winner)
+      }else{
+          this.jugadores=[]
+        }
   },
   methods: {
-    
+    record(){
+        // let marcador = [];
+        for (let i = 0; i < this.partida.length; i++) {
+            this.marcador = this.partida[i].marcador;
+        }
+
+        return console.log(this.marcador)
+    },
     edicion(){
         (this.editar===false)? this.editar=true :this.editar=false;
        return 
     },
     guardarJugador(){ 
-        localStorage.setItem('jugadores',JSON.stringify(this.jugadores))
+        return localStorage.setItem('jugadores',JSON.stringify(this.jugadores))
     },
     guardarPartida(){ 
         localStorage.setItem('partida',JSON.stringify(this.partida))
+        localStorage.setItem('global',JSON.stringify(this.global))
     },
 
     add(){
@@ -106,7 +114,6 @@ var vm = new Vue({
         }else{
             return
         }
-        console.log(color);
         this.guardarJugador();
     },
     eliminar(id){
@@ -132,13 +139,13 @@ var vm = new Vue({
             : puntos=parseInt(puntos);
             this.jugadores[item].puntos=puntosAcc+puntos;
             this.jugadores[item].historialPuntos.push(puntos);
-            (this.jugadores[item].puntos>=500)? alert('fin de la partida') : NaN;
+            (this.jugadores[item].puntos>=500)? this.finPartida() : NaN;
         }
         // console.log(this.jugadores);
         this.guardarJugador()
     },
     velocidad (array){
-        let historialVelocidad = array
+        let historialVelocidad = array;
         let velocidadTotal = historialVelocidad.reduce((a,b)=>a+b,0);//Sumas de arrays
         let total = Math.fround(velocidadTotal/array.length);
         (total> 0 && total <= 5)?this.jugadores[this.indice].velocidad ="✨💪Muy Rapido✨🏃💨":
@@ -146,7 +153,7 @@ var vm = new Vue({
                 (total > 10 && total <= 15)?this.jugadores[this.indice].velocidad ="Moderado🏃‍":
                     (total > 15 && total <= 20)?this.jugadores[this.indice].velocidad ="Lento🚶"
                     :this.jugadores[this.indice].velocidad ="🐢Muy Lento";
-        this.jugadores[this.indice].rangoVelocidad = total;
+        return this.jugadores[this.indice].rangoVelocidad = total;
         // console.log(total);
     },
     ganador(){
@@ -156,7 +163,7 @@ var vm = new Vue({
         for(item in this.jugadores){
             winner.push({
                 jugador:this.jugadores[item].nombre,
-                 puntos:this.jugadores[item].puntos
+                puntos:this.jugadores[item].puntos
             })
         }
         winner.sort(function(a,b){
@@ -164,13 +171,12 @@ var vm = new Vue({
                 return -1;
             };
         })
-        this.partida[this.contadorPartida].ganador=winner[0];
+        this.ronda[this.numRonda].ganador=winner[0];
         for(let i = 1; i < winner.length; i++){
             loser.push(winner[i])
         }
-        this.partida[this.contadorPartida].perdedores=loser;
-        this.partida[this.contadorPartida].marcador=winner;
-        // console.log(this.partida[this.contadorPartida].perdedores);
+        this.ronda[this.numRonda].perdedores=loser;
+        this.ronda[this.numRonda].marcador=winner;
         this.guardarPartida();
 },
     resetear(){
@@ -179,41 +185,42 @@ var vm = new Vue({
         }
     },
 
-    fin(){
-    this.guardarPartida();
+    finPartida(){
+        this.numPartida++
+        this.global.push(this.partida[this.numPartida])
+        this.ronda=[],
+        this.guardarPartida();
         this.h=0;this.m=0;this.s=0;
         for (item in this.jugadores) {
             this.jugadores[item].puntos=0;
             this.jugadores[item].historialPuntos=0;
             this.jugadores[item].historialVelocidad=0;
     }   
-        partida.turnos.numTurnos=0;
-        partida.rondas.numRondas=0;
-        console.log(partida);
-        console.log(this.jugadores);
+        // this.numTurnos=0;
+        this.numRonda=0;
+        // console.log(partida);
+        // console.log(this.jugadores);
     },
 
     play() {
         this.editar=true
-        //si la cantidad de jugadores es mayor a cero entonces
         if(this.jugadores.length > 0){
+            let hoy = new Date;
             this.estado = true;
-            partida = this.partida[this.contadorPartida];
-            this.partida.push(partida)
-            // console.log(partida.numPartidas=this.contadorPartida+1);
-            //Sino, salimos de esta condicion y continuamos
+            this.ronda[this.numRonda].fecha = hoy.getDate() + '-' + ( hoy.getMonth() + 1 ) + '-' + hoy.getFullYear();
+            this.ronda[this.numRonda].hora  = hoy.getHours()+":"+hoy.getMinutes()+":"+hoy.getSeconds();
+            this.escribir();
         }else{
             return alert("No puede empezar partida sin jugadores")
         }
-        this.escribir();
     },
-
+    
     escribir() {
-        partida.rondas.inicio = Date.now();
+        this.inicio = Date.now();
         if(this.indice===this.jugadores.length){
             //si es igual al total de jugadores, lo mandamos al inicio o sea, al primer jugador
             this.indice=0;
-            partida.rondas.numRondas++
+            // this.partida.numRonda++
         }
         this.quien = this.jugadores[this.indice].nombre;
         // console.log("turno de ",this.jugadores[this.indice].nombre);
@@ -242,30 +249,13 @@ var vm = new Vue({
                 miliseg = 0;
                 // console.log(seg);
             }
-            if (seg < 30 && seg >= 25 ) {
-        // Jugador Rapido seg entre 30 y 25
-       
-        // console.log('Jugador Rapido',this.jugadorRapido)
-            color = "green";} 
-        else if (seg <= 24 && seg >= 16) {
-        // Jugador Normal seg entre 25 y 5
-           // console.log('Jugador Normal')
-            // this.jugadorLento;
-        }
-        else if (seg <= 15 && seg >= 6) {
-        // Jugador Normal seg entre 25 y 5
-            // console.log('Jugador Normal')
-            // this.jugadorLento;
-            color = "orange";
-        }
-        else if (seg <= 5  && seg >=0) {
-        // Jugador Lento seg entre 5 y 0
-            // console.log('Jugador Lento')
-            // this.jugadorLento="Omar";
-            color = "red";
-        } else if (seg === -1) {
-        alert("Acepta para continuar");
-        seg = 30;
+            if (seg < 30 && seg >= 25 ) {color = "green"} 
+            else if (seg <= 15 && seg >= 6) {color = "orange"}
+            else if (seg <= 5  && seg >=0) {color = "red"} 
+            else if (seg === -1) 
+            {
+                alert("Acepta para continuar");
+                seg = 30;
         color = "green";
         }
         if (this.s > 59) {
@@ -296,39 +286,39 @@ var vm = new Vue({
         clearInterval(this.id);
         this.rj=30;
         let turnoFin= Date.now();
-        let diff = (turnoFin - partida.rondas.inicio)/1000; 
+        let diff = (turnoFin - this.inicio )/1000; 
+        console.log(diff);
         this.jugadores[this.indice].historialVelocidad.push(diff);
-        this.guardarJugador();
         this.velocidad(this.jugadores[this.indice].historialVelocidad)
-        partida.turnos.numTurnos++;
+        this.guardarJugador();
+        this.ronda[this.numRonda].numTurnos++;
         this.indice++//Jugadores+1
         this.escribir()
     },
     Detener() {
         if(this.estado===false){
-           this.mensajeAlert()
+            alert('debes iniciar una partida')
         }else
-        {clearInterval(this.id);
-        this.estado=false;
-        this.rj=30;
-        let turnoFin= Date.now();
-        let diff = (turnoFin - partida.rondas.inicio)/1000; 
-        this.jugadores[this.indice].historialVelocidad.push(diff);
-        this.guardarJugador();
-        this.velocidad(this.jugadores[this.indice].historialVelocidad)
-        this.contadorPartida++;
-        partida.duracion=this.time;
-        let hoy = new Date;
-        partida.fecha = hoy.getDate() + '-' + ( hoy.getMonth() + 1 ) + '-' + hoy.getFullYear();
-        partida.hora=hoy.getHours()+":"+hoy.getMinutes()+":"+hoy.getSeconds();
-        alert('Agrega los puntos')
-        this.agregarPuntos();
-        this.ganador()
-        this.winner=this.partida[this.contadorPartida];
-        this.partida[this.contadorPartida].jugador=this.jugadores;
-        this.guardarPartida()}
-        // this.editar=true
+        {
+            clearInterval(this.id);
+            this.estado=false;
+            this.rj=30;
+            let turnoFin= Date.now();
+            let diff = (turnoFin - this.inicio)/1000; 
+            this.jugadores[this.indice].historialVelocidad.push(diff);
+            this.velocidad(this.jugadores[this.indice].historialVelocidad)
+            this.ronda[this.numRonda].duracion=this.time; 
+            this.guardarJugador();
+            alert('Agrega los puntos')
+            this.agregarPuntos();
+            this.ganador()
+            this.ronda[this.numRonda].jugador=this.jugadores;
+            this.partida.push(this.ronda[this.numRonda])
+            // this.numRonda++;
+            console.log(this.partida);
+            this.guardarPartida()
+        }
     },
-  },
+    
+},
 });
-
